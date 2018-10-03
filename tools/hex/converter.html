@@ -20,6 +20,34 @@
   <textarea id="output"></textarea>
 
   <script>
+    document.body.addEventListener('drop', dropHandler)
+    document.body.addEventListener('dragover', dragOverHandler)
+
+  function dragOverHandler(ev) {
+    console.log('File(s) in drop zone');
+
+    // Prevent default behavior (Prevent file from being opened)
+    ev.preventDefault();
+  }
+
+    function dropHandler(event) {
+      console.log('File(s) dropped');
+
+      // Prevent default behavior (Prevent file from being opened)
+      event.preventDefault();
+
+      if (event.dataTransfer.items) {
+        // Use DataTransferItemList interface to access the file(s)
+        for (var i = 0; i < event.dataTransfer.items.length; i++) {
+          // If dropped items aren't files, reject them
+          if (event.dataTransfer.items[i].kind === 'file') {
+            var file = event.dataTransfer.items[i].getAsFile();
+            loadImage(file)
+          }
+        }
+      }
+    }
+
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas)
 
@@ -69,6 +97,7 @@
 
         for(let i = 0; i < size * 4; i+=4) {
           const hex = rgbaToHex(pixelData[i], pixelData[i + 1], pixelData[i + 2], pixelData[i + 3]);
+          // const hex = rgbaToHsvHex(pixelData[i], pixelData[i + 1], pixelData[i + 2], pixelData[i + 3]);
           hexList.push(hex);
         }
 
@@ -76,9 +105,17 @@
       }
 
       function rgbaToHex(r, g, b, alpha) {
-        const rgb = r<<16 | (g << 8) | (b);
-        return '0x' + (0x1000000 + rgb).toString(16).slice(1)
+        const hex = r<<16 | (g << 8) | (b);
+        return '0x' + (0x1000000 + hex).toString(16).slice(1)
       }
+
+      function rgbaToHsvHex(r, g, b, alpha) {
+        const hsv = rgbToHsv(r,g,b)
+        const hex = hsv[0]<<16 | (hsv[1] << 8) | (hsv[2]);
+        return '0x' + (0x1000000 + hex).toString(16).slice(1)
+      }
+
+
 
 
       function group(values, size) {
@@ -126,7 +163,31 @@
         // output = lines.map((line) => line.replace(/^\s+/gm, '')).join(' ').trim();
 
         return output;
+      }
+
+      function rgbToHsv(r, g, b) {
+        r /= 255, g /= 255, b /= 255;
+
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h, s, v = max;
+
+        var d = max - min;
+        s = max == 0 ? 0 : d / max;
+
+        if (max == min) {
+          h = 0; // achromatic
+        } else {
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+          }
+
+          h /= 6;
         }
+
+        return [ h*255, s*255, v*255 ];
+      }
 
   </script>
 </body>

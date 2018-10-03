@@ -40,8 +40,22 @@ I tried the hello world to display a red led. It was green. RGB is mixed up for 
 
 > Color Ordering: GRB
 
-
-
++ Wrote a converter (tools/hex) in JS to get a hex array from any image
++ Tested with some 16x16 shapes I saved from the web and also with custom shapes from Photoshop
++ Got a mess of pixels. My converter needed to reverse of every second row. Now it looks good.
++ tested an animation by iterating over multiples images with ha delay
++ Tested a logo. The background is dark but it's pretty light in the matrix compared to the other parts. Trying to convert to HSV (spectrum vs rgb conversion)
++ Lowered max brightness to 100, some blue values are red now. Guess `value` translates directly to LED brightness. Which makes totally sense. So back to max 255.
++ Rewrote my web application to output hsv values in hex format. I parse them back to single HSV values before passing to FastLED. Looks so much better, because darker colors have darker lights.
++ Just bought Pixen 4 as I want to try an animation. Did this for an hour.
++ Found Glediator. COM Ports missing. Quickly found out about RXTX. All the manuals telling you to put the files in ~/Library/Java/Extensions are wrong. Just put the files in the same folder as Glediator. Start with `java -jar Glediator_V2.jar`. If you see an error like "java.lang.UnsatisfiedLinkError:" the file `librxtxSerial.jnilib` is misisng or wrong for your architecture. Mien was wrong (http://rxtx.qbang.org/wiki/index.php/Download) got working ones from http://jlog.org/rxtx-mac.html.
++ Rabbit hole: Reading about the UART baud rate prescaler as under OSX librxtxSerial.jnilib can't provide a baud rate of 1.000.000 as it's configured in the Glediator Arduino sketch (the receibing "firmware").
++ To get something else done: I will work on getting my Teensy 3.2 connected to a breadboard. I'm going to solder header pins to it and will test the SD Card board I bought with it.
++ Now install Teensyduino to get board support in Arduino.
++ Yeah just run SD Card Info example and got all infos in the Serial Monitor together with: *Initializing SD card...Wiring is correct and a card is present.*
++ Back to topic: Loading BPM to use them with fastled. I leave my Teensy 3 connected.
++ Looking to sources of GameFrame the commercial 16x16 led box. It's using SdFat together with a custom BPM parser
++ gfx2gf to convert a sample image and put it on the formated SD Card.
 ## Resources
 + https://www.amazon.com/Make-Electronics-Learning-Through-Discovery/dp/1680450263
 + https://www.brainy-bits.com/arduino-16x16-matrix-frame/
@@ -50,3 +64,5 @@ I tried the hello world to display a red led. It was green. RGB is mixed up for 
 + [ WS2812B 5050 SMD ](https://www.ebay.de/itm/222192610445)
 + [ 3Pin-Solderless-DIY ](https://www.ebay.de/itm/222544533606)
 + [ JST 3pin connectors ](https://www.ebay.de/itm/362437551331)
++ https://www.pjrc.com/teensy/td_download.html
++ https://github.com/Jerware/GameFrame
