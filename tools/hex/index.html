@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+
+  <style>
+  #output {
+    width: 100vw;
+    height: 50vh;
+  }
+  </style>
+</head>
+
+<body>
+  <input type="file" id='imageSelectInput'/>
+  <img id='testimage' src='test2.png'/>
+  <textarea id="output"></textarea>
+
+  <script>
+    document.body.addEventListener('drop', dropHandler)
+    document.body.addEventListener('dragover', dragOverHandler)
+
+  function dragOverHandler(ev) {
+    console.log('File(s) in drop zone');
+
+    // Prevent default behavior (Prevent file from being opened)
+    ev.preventDefault();
+  }
+
+    function dropHandler(event) {
+      console.log('File(s) dropped');
+
+      // Prevent default behavior (Prevent file from being opened)
+      event.preventDefault();
+
+      if (event.dataTransfer.items) {
+        // Use DataTransferItemList interface to access the file(s)
+        for (var i = 0; i < event.dataTransfer.items.length; i++) {
+          // If dropped items aren't files, reject them
+          if (event.dataTransfer.items[i].kind === 'file') {
+            var file = event.dataTransfer.items[i].getAsFile();
+            loadImage(file)
+          }
+        }
+      }
+    }
+
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas)
+
+    imageSelectInput.addEventListener('change', function(event) {
+      console.log('file selected', event, imageSelectInput);
+      loadImage(imageSelectInput.files[0])
+    })
+
+    function processImageData(imageData) {
+      const hexValues = imageToHex(imageData);
+      const variableName = 'heart'
+      const result = arduinoTemplate`
+  const long ${ variableName }[] PROGMEM = {
+  ${ hexValues }
+  };`;
+
+      output.value = result;
+    }
+
+    function loadImage(file) {
+      const reader = new FileReader();
+      const img = new Image();
+
+      reader.onload = function(e) {
+        img.src = e.target.result;
+
+        img.onload = function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0 );
+
+          const imageData = ctx.getImageData(0, 0, img.width, img.height);
+          processImageData(imageData);
+        }
+
+      }
+
+      reader.readAsDataURL(file);
+    }
+
+      function imageToHex(imagedata) {
+        const size = imagedata.width * imagedata.height
+        const pixelData = imagedata.data;
+        const hexList = [];
+
+        for(let i = 0; i < size * 4; i+=4) {
+          const hex = rgbaToHex(pixelData[i], pixelData[i + 1], pixelData[i + 2], pixelData[i + 3]);
+          hexList.push(hex);
+        }
+
+        return hexList;
+      }
+
+      function rgbaToHex(r, g, b, alpha) {
+        const rgb = r<<16 | (g << 8) | (b);
+        return '0x' + (0x1000000 + rgb).toString(16).slice(1)
+      }
+
+
+      function group(values, size) {
+        return values.reduce(function(result, value, index, array) {
+          if (index % size === 0)
+            result.push(array.slice(index, index + size));
+          return result;
+        }, []);
+      }
+
+      function groupAndTwist(values) {
+        let groupedValues = group(values, 16);
+        // invert every second row
+        groupedValues = groupedValues.reduce((accu, value, index, array) => {
+          // odd row, twist
+          if(index%2 == 1) {
+            value = value.reverse()
+          }
+          accu.push(value)
+
+          return accu;
+        }, [])
+
+        return groupedValues;
+      }
+
+      function joinGroups(values) {
+        let result = [];
+        for(let i = 0; i < values.length; i++) {
+          result[i] = values[i].join(', ');
+        }
+
+        result = result.join(',\n');
+        return result
+      }
+
+      function arduinoTemplate(strings, name, hexCodeList) {
+        const codesFormatted = joinGroups(groupAndTwist(hexCodeList));
+        let output = `${strings[0]}${name}${strings[1]}${codesFormatted}${strings[2]}`;
+
+        // Split on newlines.
+        // let lines = output.split(/(?:\r\n|\n|\r)/);
+
+        // Rip out the leading whitespace.
+        // output = lines.map((line) => line.replace(/^\s+/gm, '')).join(' ').trim();
+
+        return output;
+        }
+
+  </script>
+</body>
+</html>
