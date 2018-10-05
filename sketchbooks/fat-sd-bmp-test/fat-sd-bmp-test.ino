@@ -16,6 +16,10 @@
  This example code is in the public domain.
 
  */
+
+#include <FastLED.h>
+#include "RGBConverter.h"
+
 #define BUFFPIXEL 1
 #include <SPI.h>
 //#include <SD.h>
@@ -25,7 +29,14 @@ SdFat SD;
 #define SD_CS_PIN SS
 File myFile;
 
+#define NUM_LEDS 256
+#define DATA_PIN 2
+
+CRGB leds[NUM_LEDS];
+
 void setup() {
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(255);
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
@@ -43,11 +54,11 @@ void setup() {
 
 
   // re-open the file for reading:
-  myFile = SD.open("test-framer-01.bmp");
+  myFile = SD.open("heart.bmp");
   if (myFile) {
     Serial.println("test.txt:");
 
-    bmpDraw("test-framer-01.bmp", 0, 0);
+    bmpDraw("heart.bmp", 0, 0, leds);
     // close the file:
     myFile.close();
   } else {
@@ -57,11 +68,17 @@ void setup() {
 }
 
 void loop() {
+//  for(int i = 0; i < NUM_LEDS;i++) {
+//    leds[i] = CRGB(255,255,0);
+//  }
+//  FastLED.show();
+//  delay(100);
+//  ledData[getIndex(col, row)] = CRGB(255,255,0);
   // nothing happens after setup
 }
 
 
-void bmpDraw(char *filename, uint8_t x, uint8_t y) {
+void bmpDraw(char *filename, uint8_t x, uint8_t y, struct CRGB *ledData) {
 
   int  bmpWidth, bmpHeight;   // W+H in pixels
   uint8_t  bmpDepth;              // Bit depth (currently must be 24)
@@ -76,8 +93,8 @@ void bmpDraw(char *filename, uint8_t x, uint8_t y) {
   uint32_t pos = 0;
   const uint8_t  gridWidth = 16;
   const uint8_t  gridHeight = 16;
-  int offsetX  = 0;
-  int offsetY  = 0;
+  
+  
   if((x >= gridWidth) || (y >= gridHeight)) {
     Serial.print(F("Abort."));
     return;
@@ -121,10 +138,7 @@ void bmpDraw(char *filename, uint8_t x, uint8_t y) {
         Serial.print('x');
         Serial.println(bmpHeight);
 
-        Serial.print(F("Image offset: "));
-        Serial.print(offsetX);
-        Serial.print(F(", "));
-        Serial.println(offsetY);
+        
 
         
         // BMP rows are padded (if needed) to 4-byte boundary
@@ -140,7 +154,7 @@ void bmpDraw(char *filename, uint8_t x, uint8_t y) {
         }
         
         // initialize our pixel index
-        byte index = 0; // a byte is perfect for a 16x16 grid
+//        byte index = 0; // a byte is perfect for a 16x16 grid
 
         // Crop area to be loaded
         w = bmpWidth;
@@ -158,50 +172,51 @@ void bmpDraw(char *filename, uint8_t x, uint8_t y) {
           // (avoids a lot of cluster math in SD library).
           
           if(flip) // Bitmap is stored bottom-to-top order (normal BMP)
-            pos = (bmpImageoffset + (offsetX * -3) + (bmpHeight - 1 - (row + offsetY)) * rowSize);
+            pos = (bmpImageoffset + (bmpHeight - row -1) * rowSize);
           else     // Bitmap is stored top-to-bottom
             pos = bmpImageoffset + row * rowSize;
+          
+//          pos = bmpImageoffset + row * rowSize;
+Serial.println(pos);
+
           if(myFile.curPosition() != pos) { // Need seek?
             myFile.seekSet(pos);
             buffidx = sizeof(sdbuffer); // Force buffer reload
           }
-          
+           
           for (col=0; col<w; col++) { // For each pixel...
             // Time to read more pixel data?
             if (buffidx >= sizeof(sdbuffer)) { // Indeed
               myFile.read(sdbuffer, sizeof(sdbuffer));
               buffidx = 0; // Set index to beginning
             }
-
             // push to LED buffer 
             b = sdbuffer[buffidx++];
             g = sdbuffer[buffidx++];
             r = sdbuffer[buffidx++];
-
-            // offsetY is beyond bmpHeight
-            if (row >= bmpHeight - offsetY)
-            {
-              // black pixel
-//              strip.setPixelColor(getIndex(col, row), strip.Color(0, 0, 0));
-            }
-            // offsetY is negative
-            else if (row < offsetY * -1)
-            {
-              // black pixel
-//              strip.setPixelColor(getIndex(col, row), strip.Color(0, 0, 0));
-            }
-            // offserX is beyond bmpWidth
-            else if (col >= bmpWidth + offsetX)
-            {
-              // black pixel
-//              strip.setPixelColor(getIndex(col, row), strip.Color(0, 0, 0));
-            }
-            // offsetX is positive
-            else if (col < offsetX)
-            {
-              // black pixel
-//              strip.setPixelColor(getIndex(col, row), strip.Color(0, 0, 0));
-            }
+            Serial.print(F("Index"));
+        Serial.print(getIndex(col, row));
+        Serial.print('(');
+        Serial.print(col);
+        Serial.print('-');
+        Serial.print(row);
+        Serial.print(')');
+        Serial.print(':');
+        Serial.print(r);
+        Serial.print(',');
+        Serial.print(g);
+        Serial.print(',');
+        Serial.print(b);
+        Serial.println(' ');
+            double hsv;
+            double h, s, v;
+            
+            RGBConverter::rgbToHsv(r/255, g/255, b/255, &h, &s, &v);
+        
+        Serial.println(h);
+//            ledData[getIndex(col, row)] = CHSV( h, s * 255, v * 255);
+             ledData[getIndex(col, row)] = CRGB(r,g,b);
+          
             // all good
 //            else strip.setPixelColor(getIndex(col+x, row), strip.Color(r, g, b));
             // paint pixel color
@@ -210,7 +225,8 @@ void bmpDraw(char *filename, uint8_t x, uint8_t y) {
       } // end goodBmp
     }
   }
-//  strip.show();
+  
+  FastLED.show();
  
   if(!goodBmp) Serial.println(F("Format unrecognized."));
 }
@@ -236,4 +252,22 @@ uint32_t read32(File& f) {
   ((uint8_t *)&result)[2] = f.read();
   ((uint8_t *)&result)[3] = f.read(); // MSB
   return result;
+}
+
+byte getIndex(byte x, byte y)
+{
+  byte index;
+  if (y == 0)
+  {
+    index = 15 - x;
+  }
+  else if (y % 2 != 0)
+  {
+    index = y * 16 + x;
+  }
+  else
+  {
+    index = (y * 16 + 15) - x;
+  }
+  return index;
 }

@@ -1,5 +1,3 @@
 {
-    "board": "arduino:avr:uno",
-    "sketch": "sketchbooks/first-images/first-images.ino",
-    "port": "/dev/cu.usbmodem40121"
+    "sketch": "sketchbooks/fat-sd-bmp-test/fat-sd-bmp-test.ino"
 }
