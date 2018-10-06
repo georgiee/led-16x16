@@ -34,7 +34,14 @@ File myFile;
 
 CRGB leds[NUM_LEDS];
 
+#define BUTTON_NEXT_PIN 14
+
+boolean 
+  buttonPressed = false; // control button check
+  
 void setup() {
+  pinMode(BUTTON_NEXT_PIN, INPUT); 
+  
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(255);
   // Open serial communications and wait for port to open:
@@ -54,11 +61,11 @@ void setup() {
 
 
   // re-open the file for reading:
-  myFile = SD.open("heart.bmp");
+  myFile = SD.open("testimage2.bmp");
   if (myFile) {
     Serial.println("test.txt:");
 
-    bmpDraw("heart.bmp", 0, 0, leds);
+//    bmpDraw("testimage2.bmp", 0, 0, leds);
     // close the file:
     myFile.close();
   } else {
@@ -68,6 +75,22 @@ void setup() {
 }
 
 void loop() {
+
+  if(digitalRead(BUTTON_NEXT_PIN) == LOW && buttonPressed == false) {
+    Serial.println("button pressed");
+    myFile = SD.open("testimage2.bmp");
+    bmpDraw("testimage2.bmp", 0, 0, leds);
+    
+    myFile.close();
+    buttonPressed = true;
+  }else if(digitalRead(BUTTON_NEXT_PIN) == HIGH && buttonPressed == true) {
+    
+    myFile = SD.open("heart.bmp");
+    bmpDraw("heart.bmps", 0, 0, leds);
+    
+    myFile.close();
+    buttonPressed = false;
+  }
 //  for(int i = 0; i < NUM_LEDS;i++) {
 //    leds[i] = CRGB(255,255,0);
 //  }
