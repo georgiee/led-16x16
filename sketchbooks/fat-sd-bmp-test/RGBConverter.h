@@ -223,3 +223,4 @@ private:
     static double hueToRgb(double p, double q, double t);
 };
 #endif // RGBConverter_h
+

@@ -195,3 +195,4 @@ void RGBConverter::hsvToYiq(double h, double s, double v, double *y, double *i, 
   hsvToRgb(h, s, v, &r, &g, &b);
   rgbToYiq(r, g, b, y, i, q);
 }
+
