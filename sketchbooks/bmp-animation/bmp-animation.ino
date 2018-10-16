@@ -40,7 +40,8 @@ void openImage() {
   }
 
   drawer.setFile(file);
-  drawer.draw();
+  drawer.draw(0, 16);
+  drawer.draw(0, 32);
 }
 
 void loop() {
