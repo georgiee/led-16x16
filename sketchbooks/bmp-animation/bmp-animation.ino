@@ -1,18 +1,28 @@
-
+#include <FastLED.h>
 #include <SPI.h>
 #include "SdFat.h"
 #include "BmpDrawer.h"
 
+#define NUM_LEDS 256
+#define LED_PIN 2
 #define SD_CS_PIN SS
 #define BUTTON_NEXT_PIN 14
 
+CRGB leds[NUM_LEDS];
+#define BRIGHTNESS 150
+
 SdFat sd; // set filesystem
 SdFile file; // set filesystem
-BmpDrawer drawer;
-
+//BmpDrawer drawer(16, 16);
+BmpDrawer drawer(leds);
 boolean buttonPressed = false; // control button check
 
+struct CRGB *m_LED;
+
 void setup() {
+  FastLED.addLeds<WS2811, LED_PIN, GRB>(leds, 256);
+  FastLED.setBrightness(BRIGHTNESS);
+  
   pinMode(BUTTON_NEXT_PIN, INPUT);
 
   // Open serial communications and wait for port to open:
@@ -40,10 +50,12 @@ void openImage() {
   }
 
   drawer.setFile(file);
-  drawer.draw(0, 16);
-  drawer.draw(0, 32);
+  drawer.showFrame(0);
+  FastLED.show();
 }
 
 void loop() {
-
+  drawer.showFrame();
+  FastLED.show();
+  delay(20);
 }
